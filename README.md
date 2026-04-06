@@ -56,18 +56,13 @@ Once installed, Claude can use it as part of normal UI work and visual review.
 
 ### Codex
 
-Codex does not need the MCP setup anymore.
-
-Install it as a normal Codex plugin and the skill runs the screenshot script directly from the plugin package.
-
-If you are wiring it up locally from the repo, the important part is just:
+Run this:
 
 ```bash
-npm install
-npm run build
+mkdir -p ~/.codex/plugins ~/.agents/plugins && rm -rf ~/.codex/plugins/autoscreen && git clone https://github.com/kayko11/autoscreen.git ~/.codex/plugins/autoscreen && (cd ~/.codex/plugins/autoscreen && npm install && npm run build) && python3 -c 'import json, os, pathlib; p = pathlib.Path(os.path.expanduser("~/.agents/plugins/marketplace.json")); p.parent.mkdir(parents=True, exist_ok=True); data = {"name":"local-plugins","interface":{"displayName":"Local Plugins"},"plugins":[]}; data = json.loads(p.read_text()) if p.exists() else data; plugins = [x for x in data.get("plugins", []) if x.get("name") != "autoscreen"]; plugins.append({"name":"autoscreen","source":{"source":"local","path":"./.codex/plugins/autoscreen"},"policy":{"installation":"AVAILABLE","authentication":"ON_INSTALL"},"category":"Productivity"}); data["plugins"] = plugins; p.write_text(json.dumps(data, indent=2) + "\n")'
 ```
 
-After that, the Codex plugin can call the packaged screenshot script itself. No separate `codex mcp add ...` step.
+Then restart Codex.
 
 ## First run
 
@@ -90,7 +85,7 @@ Claude also has the slash command:
 /autoscreen /dashboard dashboard-ready,dashboard-empty
 ```
 
-Under the hood, the MCP tool takes:
+Under the hood, the screenshot script takes:
 
 - `url`
 - `ready_test_ids`
@@ -153,7 +148,6 @@ That sounds small, but it adds up fast when you are doing lots of UI cleanup.
 - Node
 - TypeScript
 - Playwright
-- MCP
 
 The capture logic is shared. Claude and Codex just use different wrappers on top.
 
