@@ -163,6 +163,4 @@ The core server is agent-agnostic. Claude and Codex just sit on top with differe
 
 ## Status
 
-This is a real working tool, but still very much in the "indie dev trying to make useful stuff without turning it into enterprise sludge" phase.
-
-Which honestly feels like the correct phase for it.
+Works,sorta.
