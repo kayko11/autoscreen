@@ -1,7 +1,7 @@
 {
   "name": "autoscreen",
   "version": "0.1.0",
-  "description": "MCP server for AI-driven visual UI review — navigate, wait for real data, screenshot.",
+  "description": "AI-driven visual UI review for coding agents — navigate, wait for real data, screenshot.",
   "type": "module",
   "bin": {
     "autoscreen-mcp": "dist/index.js"

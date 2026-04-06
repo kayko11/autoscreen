@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "autoscreen": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["./dist/index.js"]
-    }
-  }
-}

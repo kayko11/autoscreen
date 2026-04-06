@@ -4,13 +4,15 @@
  * Usage: node screenshot.mjs <url> <testid1,testid2,...> [width] [height] [scroll_bottom]
  * Outputs: JSON { path, url, matchedTestId, durationMs } to stdout
  */
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { execSync } from "node:child_process";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? dirname(new URL(import.meta.url).pathname);
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? dirname(SCRIPT_DIR);
 
 // Ensure playwright is available, installing if needed
 async function loadPlaywright() {

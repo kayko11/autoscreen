@@ -8,7 +8,7 @@ That is the whole pitch.
 
 It spins up a headless browser, opens your app, waits for a real ready-state `data-testid`, and grabs a screenshot only once the page is actually there. No random sleeps. No "looks broken because we captured the loading skeleton" nonsense.
 
-Built for Claude first, now packaged so Codex can use it too.
+Built for Claude first, now set up for Codex too.
 
 ## Why it exists
 
@@ -56,21 +56,18 @@ Once installed, Claude can use it as part of normal UI work and visual review.
 
 ### Codex
 
-Clone the repo, install deps, build it, then register the MCP server:
+Codex does not need the MCP setup anymore.
+
+Install it as a normal Codex plugin and the skill runs the screenshot script directly from the plugin package.
+
+If you are wiring it up locally from the repo, the important part is just:
 
 ```bash
 npm install
 npm run build
-codex mcp add autoscreen --env AUTOSCREEN_BASE_URL=http://localhost:3000 -- node /absolute/path/to/autoscreen/dist/index.js
 ```
 
-If the repo lives at `/home/kay/autoscreen`, that becomes:
-
-```bash
-codex mcp add autoscreen --env AUTOSCREEN_BASE_URL=http://localhost:3000 -- node /home/kay/autoscreen/dist/index.js
-```
-
-There is also Codex plugin metadata in [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) and a local MCP definition in [`.mcp.json`](./.mcp.json), so the repo is set up for Codex without needing a second codebase.
+After that, the Codex plugin can call the packaged screenshot script itself. No separate `codex mcp add ...` step.
 
 ## First run
 
@@ -97,7 +94,6 @@ Under the hood, the MCP tool takes:
 
 - `url`
 - `ready_test_ids`
-- optional `base_url`
 - optional `viewport`
 - optional `scroll_to_bottom`
 - optional `full_page`
@@ -159,7 +155,7 @@ That sounds small, but it adds up fast when you are doing lots of UI cleanup.
 - Playwright
 - MCP
 
-The core server is agent-agnostic. Claude and Codex just sit on top with different packaging and instruction layers.
+The capture logic is shared. Claude and Codex just use different wrappers on top.
 
 ## Status
 
