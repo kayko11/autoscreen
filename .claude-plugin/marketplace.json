@@ -15,8 +15,8 @@
       "source": "./",
       "category": "testing",
       "keywords": ["screenshot", "ui", "visual", "testing", "playwright", "review", "design", "qa"],
-      "homepage": "https://github.com/kayko11/autoscreen-mcp",
-      "repository": "https://github.com/kayko11/autoscreen-mcp"
+      "homepage": "https://github.com/kayko11/autoscreen",
+      "repository": "https://github.com/kayko11/autoscreen"
     }
   ]
 }
