@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "autoscreen",
+  "description": "AI-native visual UI review for Claude Code — screenshot live pages gated on real data, not timeouts.",
+  "owner": {
+    "name": "kayko11",
+    "email": ""
+  },
+  "plugins": [
+    {
+      "name": "autoscreen",
+      "description": "Take screenshots of your running app mid-conversation. Gated on data-testid ready-states so captures always show real populated data. Works with any framework on localhost.",
+      "version": "0.1.0",
+      "author": { "name": "kayko11" },
+      "source": "./",
+      "category": "testing",
+      "keywords": ["screenshot", "ui", "visual", "testing", "playwright", "review", "design", "qa"],
+      "homepage": "https://github.com/kayko11/autoscreen-mcp",
+      "repository": "https://github.com/kayko11/autoscreen-mcp"
+    }
+  ]
+}

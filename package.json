@@ -1,0 +1,25 @@
+{
+  "name": "autoscreen-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for AI-driven visual UI review — navigate, wait for real data, screenshot.",
+  "type": "module",
+  "bin": {
+    "autoscreen-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.2",
+    "playwright": "^1.51.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

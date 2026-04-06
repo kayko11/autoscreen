@@ -1,0 +1,9 @@
+{
+  "name": "autoscreen",
+  "version": "0.1.0",
+  "description": "AI-native visual UI review — screenshot live pages gated on real data, not timeouts. Works with any framework.",
+  "author": {
+    "name": "kayko11"
+  },
+  "keywords": ["screenshot", "ui", "visual", "testing", "playwright", "review", "design", "qa"]
+}
