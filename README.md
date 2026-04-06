@@ -1,6 +1,46 @@
 # AutoScreen
 
-AI-native visual UI review for coding agents. Screenshot your running app mid-conversation with a ready-state gate, so captures show real data instead of loading skeletons.
+AutoScreen is a small tool for one very specific loop:
+
+make UI change -> take screenshot -> let your agent look at it -> fix the weird thing -> repeat
+
+That is the whole pitch.
+
+It spins up a headless browser, opens your app, waits for a real ready-state `data-testid`, and grabs a screenshot only once the page is actually there. No random sleeps. No "looks broken because we captured the loading skeleton" nonsense.
+
+Built for Claude first, now packaged so Codex can use it too.
+
+## Why it exists
+
+Most visual tools are built to catch regressions.
+
+AutoScreen is built for the messy middle of actually making UI:
+
+- you changed spacing and want to see if it still feels right
+- you fixed an empty state and want eyes on it
+- your agent says "should be good now" and you want proof
+- you do not want to context-switch into Playwright tests for every tiny visual check
+
+It is basically visual QA for the "just show me the page" phase.
+
+## What it does
+
+AutoScreen:
+
+- opens a URL in Playwright
+- waits for one of your ready-state `data-testid` values
+- captures a screenshot
+- returns it to the agent for review
+
+That ready-state gate is the whole trick.
+
+If you pass:
+
+```text
+significance-ready,significance-empty
+```
+
+the screenshot fires as soon as either real state is visible. So you get the populated screen or the real empty state, not a half-loaded lie.
 
 ## Install
 
@@ -10,11 +50,13 @@ AI-native visual UI review for coding agents. Screenshot your running app mid-co
 /plugin marketplace add kayko11/autoscreen
 ```
 
-That's it. Claude will start using AutoScreen automatically after UI changes and when asked for visual review.
+That is it.
+
+Once installed, Claude can use it as part of normal UI work and visual review.
 
 ### Codex
 
-Build the MCP server, then add it to Codex:
+Clone the repo, install deps, build it, then register the MCP server:
 
 ```bash
 npm install
@@ -22,56 +64,105 @@ npm run build
 codex mcp add autoscreen --env AUTOSCREEN_BASE_URL=http://localhost:3000 -- node /absolute/path/to/autoscreen/dist/index.js
 ```
 
-If you cloned this repo to `/home/kay/autoscreen`, the command is:
+If the repo lives at `/home/kay/autoscreen`, that becomes:
 
 ```bash
 codex mcp add autoscreen --env AUTOSCREEN_BASE_URL=http://localhost:3000 -- node /home/kay/autoscreen/dist/index.js
 ```
 
-The repo now also includes Codex plugin metadata in [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) and a local MCP config in [`.mcp.json`](./.mcp.json), so it can be packaged as a Codex plugin without splitting into a second repo.
+There is also Codex plugin metadata in [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) and a local MCP definition in [`.mcp.json`](./.mcp.json), so the repo is set up for Codex without needing a second codebase.
 
-On first use, the script downloads Chromium (~130MB, one-time, ~1-2 min). Every capture after that is ~700ms.
+## First run
 
-## How it works
+First time through, Playwright may need to pull Chromium.
 
-AutoScreen navigates to a URL in a headless browser, waits for a `data-testid` ready-state element to become visible (confirming real data has loaded), then returns a screenshot for Claude to review.
-
-The `data-testid` gate is the key design — captures always show populated state, never loading skeletons.
+That is a one-time hit, roughly 130MB, usually a minute or two depending on your connection. After that, captures are fast.
 
 ## Usage
 
-Ask your agent naturally:
+You can ask naturally:
 
-> "take a screenshot of the dashboard"  
-> "do a visual audit of the workspace"  
-> "check what the market lens looks like now"
+> take a screenshot of the dashboard  
+> check what the workspace looks like now  
+> do a visual review of the right rail  
+> capture the market lens after it loads
 
-Or use the slash command:
+Claude also has the slash command:
 
-```
+```bash
 /autoscreen /dashboard dashboard-ready,dashboard-empty
 ```
 
-## The ready-state contract
+Under the hood, the MCP tool takes:
 
-Every capture needs `data-testid` attributes to gate on. Pass both the ready and empty variant:
+- `url`
+- `ready_test_ids`
+- optional `base_url`
+- optional `viewport`
+- optional `scroll_to_bottom`
+- optional `full_page`
 
-```
-significance-ready,significance-empty
-```
+## The only contract that matters
 
-The screenshot fires as soon as either is visible. If your component doesn't have testIds yet, add one to the root element — it's a 5-second change:
+Your app needs `data-testid` markers for real loaded states.
+
+Good:
 
 ```tsx
 <section data-testid="dashboard-ready">...</section>
+<section data-testid="dashboard-empty">...</section>
 ```
+
+Bad:
+
+- waiting on a fixed timeout
+- screenshotting while the page is still loading
+- pretending "it looked broken" is a useful signal when the data had not rendered yet
+
+If your screen does not have a test id yet, add one. It is usually a 5-second fix and makes the screenshots way more reliable.
 
 ## Base URL
 
-Defaults to `http://localhost:3000`. Override with `AUTOSCREEN_BASE_URL` in your environment.
+Default base URL is:
 
-## Why this is different
+```text
+http://localhost:3000
+```
 
-Most visual testing tools are regression detectors — they tell you when something changed. AutoScreen is an on-demand visual inspector for AI. Claude reviews screenshots with design judgment: layout, empty states, information hierarchy, UX quality. Not pixel diffs.
+Override it with `AUTOSCREEN_BASE_URL` if your app runs somewhere else.
 
-The loop: make a change → capture → Claude reviews → fix → capture again. Tight, no context switching.
+## Why I like it
+
+It keeps the loop tight.
+
+Instead of:
+
+1. make change
+2. alt-tab
+3. refresh manually
+4. inspect page
+5. explain what you saw back to the agent
+
+you get:
+
+1. make change
+2. ask for screenshot
+3. agent sees it too
+4. keep moving
+
+That sounds small, but it adds up fast when you are doing lots of UI cleanup.
+
+## Tech
+
+- Node
+- TypeScript
+- Playwright
+- MCP
+
+The core server is agent-agnostic. Claude and Codex just sit on top with different packaging and instruction layers.
+
+## Status
+
+This is a real working tool, but still very much in the "indie dev trying to make useful stuff without turning it into enterprise sludge" phase.
+
+Which honestly feels like the correct phase for it.
