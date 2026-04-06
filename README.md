@@ -5,7 +5,7 @@ AI-native visual UI review for Claude Code. Screenshot your running app mid-conv
 ## Install
 
 ```bash
-/plugin install kayko11/autoscreen-mcp
+/plugin install kayko11/autoscreen
 ```
 
 That's it. Claude will start using AutoScreen automatically after UI changes and when asked for visual review.
