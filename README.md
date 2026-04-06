@@ -56,10 +56,23 @@ Once installed, Claude can use it as part of normal UI work and visual review.
 
 ### Codex
 
-Run this:
+There is not a nice one-command Codex install yet.
+
+Do this:
 
 ```bash
-mkdir -p ~/.codex/plugins ~/.agents/plugins && rm -rf ~/.codex/plugins/autoscreen && git clone https://github.com/kayko11/autoscreen.git ~/.codex/plugins/autoscreen && (cd ~/.codex/plugins/autoscreen && npm install && npm run build) && python3 -c 'import json, os, pathlib; p = pathlib.Path(os.path.expanduser("~/.agents/plugins/marketplace.json")); p.parent.mkdir(parents=True, exist_ok=True); data = {"name":"local-plugins","interface":{"displayName":"Local Plugins"},"plugins":[]}; data = json.loads(p.read_text()) if p.exists() else data; plugins = [x for x in data.get("plugins", []) if x.get("name") != "autoscreen"]; plugins.append({"name":"autoscreen","source":{"source":"local","path":"./.codex/plugins/autoscreen"},"policy":{"installation":"AVAILABLE","authentication":"ON_INSTALL"},"category":"Productivity"}); data["plugins"] = plugins; p.write_text(json.dumps(data, indent=2) + "\n")'
+git clone https://github.com/kayko11/autoscreen.git ~/.codex/plugins/autoscreen
+```
+
+Add this plugin entry to `~/.agents/plugins/marketplace.json`:
+
+```json
+{
+  "name": "autoscreen",
+  "source": { "source": "local", "path": "./.codex/plugins/autoscreen" },
+  "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+  "category": "Productivity"
+}
 ```
 
 Then restart Codex.
