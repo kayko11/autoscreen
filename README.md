@@ -1,14 +1,34 @@
 # AutoScreen
 
-AI-native visual UI review for Claude Code. Screenshot your running app mid-conversation — no config, no test runner, no context switching.
+AI-native visual UI review for coding agents. Screenshot your running app mid-conversation with a ready-state gate, so captures show real data instead of loading skeletons.
 
 ## Install
+
+### Claude Code
 
 ```bash
 /plugin marketplace add kayko11/autoscreen
 ```
 
 That's it. Claude will start using AutoScreen automatically after UI changes and when asked for visual review.
+
+### Codex
+
+Build the MCP server, then add it to Codex:
+
+```bash
+npm install
+npm run build
+codex mcp add autoscreen --env AUTOSCREEN_BASE_URL=http://localhost:3000 -- node /absolute/path/to/autoscreen/dist/index.js
+```
+
+If you cloned this repo to `/home/kay/autoscreen`, the command is:
+
+```bash
+codex mcp add autoscreen --env AUTOSCREEN_BASE_URL=http://localhost:3000 -- node /home/kay/autoscreen/dist/index.js
+```
+
+The repo now also includes Codex plugin metadata in [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json) and a local MCP config in [`.mcp.json`](./.mcp.json), so it can be packaged as a Codex plugin without splitting into a second repo.
 
 On first use, the script downloads Chromium (~130MB, one-time, ~1-2 min). Every capture after that is ~700ms.
 
@@ -20,7 +40,7 @@ The `data-testid` gate is the key design — captures always show populated stat
 
 ## Usage
 
-Just ask Claude naturally:
+Ask your agent naturally:
 
 > "take a screenshot of the dashboard"  
 > "do a visual audit of the workspace"  

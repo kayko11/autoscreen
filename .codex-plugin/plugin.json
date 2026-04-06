@@ -1,0 +1,31 @@
+{
+  "name": "autoscreen",
+  "version": "0.1.0",
+  "description": "AI-native visual UI review for coding agents. Screenshot live pages gated on real data, not timeouts.",
+  "author": {
+    "name": "kayko11",
+    "url": "https://github.com/kayko11"
+  },
+  "homepage": "https://github.com/kayko11/autoscreen",
+  "repository": "https://github.com/kayko11/autoscreen",
+  "keywords": ["screenshot", "ui", "visual", "testing", "playwright", "review", "design", "qa", "mcp"],
+  "skills": "./codex-skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AutoScreen",
+    "shortDescription": "Screenshot live pages after real data loads.",
+    "longDescription": "AutoScreen gives coding agents an on-demand visual UI review loop. It navigates to a live page, waits for ready-state data-testid markers, and returns a screenshot for review.",
+    "developerName": "kayko11",
+    "category": "Productivity",
+    "capabilities": ["Interactive"],
+    "websiteURL": "https://github.com/kayko11/autoscreen",
+    "privacyPolicyURL": "https://github.com/kayko11/autoscreen",
+    "termsOfServiceURL": "https://github.com/kayko11/autoscreen",
+    "defaultPrompt": [
+      "Take a screenshot of /workspace",
+      "Review the UI after my latest frontend changes",
+      "Capture the market lens once it reaches a ready state"
+    ],
+    "brandColor": "#2563EB"
+  }
+}
