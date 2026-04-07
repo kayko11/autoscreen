@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
 import { once } from "node:events";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { parseCliArgs } from "../dist/cli.js";
 import { formatToolError } from "../dist/index.js";
 import { ReadyStateTimeoutError, ValidationError } from "../dist/core/errors.js";
 
 const execFileAsync = promisify(execFile);
+const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
 
 function createFixtureServer() {
   const server = createServer((request, response) => {
@@ -83,6 +85,24 @@ test("parseCliArgs rejects missing required arguments", () => {
   assert.throws(() => parseCliArgs([]), ValidationError);
 });
 
+test("parseCliArgs rejects missing named flag values clearly", () => {
+  assert.throws(
+    () => parseCliArgs(["--url", "--width", "1440", "--ready-test-ids", "ready"]),
+    /--url requires a value/
+  );
+});
+
+test("parseCliArgs accepts flexible boolean flag values", () => {
+  assert.deepEqual(
+    parseCliArgs(["--url", "/dashboard", "--ready-test-ids", "ready", "--full-page", "0"]),
+    {
+      url: "/dashboard",
+      ready_test_ids: ["ready"],
+      full_page: false
+    }
+  );
+});
+
 test("formatToolError returns validation message without empty json", () => {
   assert.equal(formatToolError(new ValidationError("bad request")), "bad request");
 });
@@ -104,7 +124,7 @@ test("autoscreen-cli supports named flags end to end", async () => {
     }
 
     const { stdout } = await execFileAsync("node", [
-      "/home/kay/autoscreen/dist/cli.js",
+      cliPath,
       "--url",
       "/dashboard",
       "--base-url",

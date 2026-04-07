@@ -104,7 +104,7 @@ The CLI adapter takes:
 
 - `--url`
 - `--ready-test-ids`
-- optional `viewport`
+- optional `--width` and `--height`
 - optional `--scroll-bottom`
 - optional `--full-page`
 - optional `--base-url`

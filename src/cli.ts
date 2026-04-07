@@ -17,15 +17,29 @@ function parseFlagBoolean(rawValue: string | undefined, flagName: string): boole
     return true;
   }
 
-  if (rawValue === "true") {
+  const normalized = rawValue.toLowerCase();
+
+  if (normalized === "true" || normalized === "1") {
     return true;
   }
 
-  if (rawValue === "false") {
+  if (normalized === "false" || normalized === "0") {
     return false;
   }
 
-  throw new ValidationError(`${flagName} must be true or false when a value is provided`);
+  throw new ValidationError(`${flagName} must be true/false or 1/0 when a value is provided`);
+}
+
+function isFlagToken(value: string | undefined): boolean {
+  return value?.startsWith("--") ?? false;
+}
+
+function requireFlagValue(next: string | undefined, flagName: string): string {
+  if (next === undefined || isFlagToken(next)) {
+    throw new ValidationError(`${flagName} requires a value`);
+  }
+
+  return next;
 }
 
 function parseNamedCliArgs(argv: string[]): Record<string, unknown> {
@@ -43,51 +57,51 @@ function parseNamedCliArgs(argv: string[]): Record<string, unknown> {
 
     switch (flagName) {
       case "url":
-        parsed.url = next;
+        parsed.url = requireFlagValue(next, "--url");
         index += 1;
         break;
       case "ready-test-ids":
-        parsed.ready_test_ids = next ? splitReadyTestIds(next) : undefined;
+        parsed.ready_test_ids = splitReadyTestIds(requireFlagValue(next, "--ready-test-ids"));
         index += 1;
         break;
       case "base-url":
-        parsed.base_url = next;
+        parsed.base_url = requireFlagValue(next, "--base-url");
         index += 1;
         break;
       case "width":
         parsed.viewport = {
           ...(parsed.viewport as Record<string, unknown> | undefined),
-          width: next === undefined ? undefined : Number(next)
+          width: Number(requireFlagValue(next, "--width"))
         };
         index += 1;
         break;
       case "height":
         parsed.viewport = {
           ...(parsed.viewport as Record<string, unknown> | undefined),
-          height: next === undefined ? undefined : Number(next)
+          height: Number(requireFlagValue(next, "--height"))
         };
         index += 1;
         break;
       case "scroll-bottom":
         parsed.scroll_to_bottom = parseFlagBoolean(
-          next?.startsWith("--") ? undefined : next,
+          isFlagToken(next) ? undefined : next,
           "--scroll-bottom"
         );
-        if (!next?.startsWith("--") && next !== undefined) {
+        if (!isFlagToken(next) && next !== undefined) {
           index += 1;
         }
         break;
       case "full-page":
         parsed.full_page = parseFlagBoolean(
-          next?.startsWith("--") ? undefined : next,
+          isFlagToken(next) ? undefined : next,
           "--full-page"
         );
-        if (!next?.startsWith("--") && next !== undefined) {
+        if (!isFlagToken(next) && next !== undefined) {
           index += 1;
         }
         break;
       case "timeout-ms":
-        parsed.timeout_ms = next === undefined ? undefined : Number(next);
+        parsed.timeout_ms = Number(requireFlagValue(next, "--timeout-ms"));
         index += 1;
         break;
       default:
