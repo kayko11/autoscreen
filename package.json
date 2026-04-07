@@ -4,12 +4,15 @@
   "description": "AI-driven visual UI review for coding agents — navigate, wait for real data, screenshot.",
   "type": "module",
   "bin": {
-    "autoscreen-mcp": "dist/index.js"
+    "autoscreen-mcp": "dist/index.js",
+    "autoscreen-cli": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc --watch"
+    "cli": "node dist/cli.js",
+    "dev": "tsc --watch",
+    "test": "npm run build && node --test tests/*.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",

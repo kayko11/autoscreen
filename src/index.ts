@@ -2,7 +2,10 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { closeBrowser, takeScreenshot } from "./browser.js";
+import { captureScreenshot } from "./core/capture.js";
+import { closeSharedBrowser } from "./core/browser.js";
+import { ReadyStateTimeoutError, ValidationError } from "./core/errors.js";
+import { validateScreenshotRequest } from "./validate/screenshot-request.js";
 
 const server = new Server(
   { name: "autoscreen", version: "0.1.0" },
@@ -61,42 +64,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     throw new Error(`Unknown tool: ${request.params.name}`);
   }
 
-  const args = request.params.arguments as {
-    url: string;
-    base_url?: string;
-    ready_test_ids: string[];
-    viewport?: { width: number; height: number };
-    scroll_to_bottom?: boolean;
-    full_page?: boolean;
-  };
+  try {
+    const validated = validateScreenshotRequest(request.params.arguments ?? {});
+    const result = await captureScreenshot(validated);
+    const meta = {
+      url: result.finalUrl,
+      ready_test_id_matched: result.matchedTestId,
+      duration_ms: result.durationMs,
+      viewport: result.viewport,
+      size_bytes: result.image.byteLength,
+      ...(result.failedRequests.length > 0 && { failed_requests: result.failedRequests }),
+      ...(result.failedResponses.length > 0 && { failed_responses: result.failedResponses }),
+      ...(result.droppedFailureEvents > 0 && { dropped_failure_events: result.droppedFailureEvents })
+    };
 
-  const result = await takeScreenshot({
-    url: args.url,
-    baseUrl: args.base_url,
-    readyTestIds: args.ready_test_ids,
-    viewport: args.viewport,
-    scrollToBottom: args.scroll_to_bottom,
-    fullPage: args.full_page
-  });
+    return {
+      content: [
+        { type: "image", data: result.image.toString("base64"), mimeType: "image/png" },
+        { type: "text", text: JSON.stringify(meta, null, 2) }
+      ]
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const context =
+      error instanceof ReadyStateTimeoutError || error instanceof ValidationError
+        ? JSON.stringify(
+            error instanceof ReadyStateTimeoutError ? error.context ?? {} : {},
+            null,
+            2
+          )
+        : null;
 
-  const meta = {
-    url: result.url,
-    ready_test_id_matched: result.readyTestId,
-    duration_ms: result.durationMs,
-    ...(result.failedRequests.length > 0 && { failed_requests: result.failedRequests }),
-    ...(result.failedResponses.length > 0 && { failed_responses: result.failedResponses })
-  };
-
-  return {
-    content: [
-      { type: "image", data: result.base64, mimeType: "image/png" },
-      { type: "text", text: JSON.stringify(meta, null, 2) }
-    ]
-  };
+    return {
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: context ? `${message}\n${context}` : message
+        }
+      ]
+    };
+  }
 });
 
 process.on("SIGINT", async () => {
-  await closeBrowser();
+  await closeSharedBrowser();
   process.exit(0);
 });
 

@@ -98,13 +98,21 @@ Claude also has the slash command:
 /autoscreen /dashboard dashboard-ready,dashboard-empty
 ```
 
-Under the hood, the screenshot script takes:
+Under the hood, everything routes through one capture core. The MCP server and CLI just format the result differently.
+
+The CLI adapter takes:
 
 - `url`
 - `ready_test_ids`
 - optional `viewport`
 - optional `scroll_to_bottom`
 - optional `full_page`
+
+Example:
+
+```bash
+autoscreen-cli /dashboard dashboard-ready,dashboard-empty 1440 960 true
+```
 
 ## The only contract that matters
 
@@ -161,9 +169,10 @@ That sounds small, but it adds up fast when you are doing lots of UI cleanup.
 - Node
 - TypeScript
 - Playwright
+- one shared capture pipeline used by both MCP and CLI
 
 The capture logic is shared. Claude and Codex just use different wrappers on top.
 
 ## Status
 
-Works,sorta.
+Stable enough to extend: runtime validation, typed errors, bounded network diagnostics, and one capture path for both adapters.
