@@ -6,6 +6,21 @@ import { captureScreenshot } from "./core/capture.js";
 import { closeSharedBrowser } from "./core/browser.js";
 import { ReadyStateTimeoutError, ValidationError } from "./core/errors.js";
 import { validateScreenshotRequest } from "./validate/screenshot-request.js";
+import { pathToFileURL } from "node:url";
+
+export function formatToolError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (error instanceof ReadyStateTimeoutError && error.context) {
+    return `${message}\n${JSON.stringify(error.context, null, 2)}`;
+  }
+
+  if (error instanceof ValidationError) {
+    return message;
+  }
+
+  return message;
+}
 
 const server = new Server(
   { name: "autoscreen", version: "0.1.0" },
@@ -85,32 +100,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       ]
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const context =
-      error instanceof ReadyStateTimeoutError || error instanceof ValidationError
-        ? JSON.stringify(
-            error instanceof ReadyStateTimeoutError ? error.context ?? {} : {},
-            null,
-            2
-          )
-        : null;
-
     return {
       isError: true,
       content: [
         {
           type: "text",
-          text: context ? `${message}\n${context}` : message
+          text: formatToolError(error)
         }
       ]
     };
   }
 });
 
-process.on("SIGINT", async () => {
+async function cleanupAndExit(): Promise<void> {
   await closeSharedBrowser();
   process.exit(0);
-});
+}
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
+export function registerCleanupHandlers(): void {
+  process.on("SIGINT", () => {
+    void cleanupAndExit();
+  });
+  process.on("SIGTERM", () => {
+    void cleanupAndExit();
+  });
+}
+
+async function main(): Promise<void> {
+  registerCleanupHandlers();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+const invokedPath = process.argv[1];
+if (invokedPath && import.meta.url === pathToFileURL(invokedPath).href) {
+  await main();
+}

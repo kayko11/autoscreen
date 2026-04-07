@@ -2,11 +2,12 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
 import { captureScreenshot } from "./core/capture.js";
 import { ValidationError } from "./core/errors.js";
 import { validateScreenshotRequest } from "./validate/screenshot-request.js";
 
-function parseArgs(argv: string[]): Record<string, unknown> {
+export function parseCliArgs(argv: string[]): Record<string, unknown> {
   const [url, testIdsArg, widthArg, heightArg, scrollArg] = argv;
 
   if (!url || !testIdsArg) {
@@ -32,7 +33,7 @@ function parseArgs(argv: string[]): Record<string, unknown> {
 }
 
 async function main(): Promise<void> {
-  const request = validateScreenshotRequest(parseArgs(process.argv.slice(2)));
+  const request = validateScreenshotRequest(parseCliArgs(process.argv.slice(2)));
   const result = await captureScreenshot(request);
   const outPath = join(tmpdir(), `autoscreen-${Date.now()}.png`);
   writeFileSync(outPath, result.image);
@@ -52,8 +53,11 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-});
+const invokedPath = process.argv[1];
+if (invokedPath && import.meta.url === pathToFileURL(invokedPath).href) {
+  void main().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    process.exit(1);
+  });
+}
