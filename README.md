@@ -102,13 +102,21 @@ Under the hood, everything routes through one capture core. The MCP server and C
 
 The CLI adapter takes:
 
-- `url`
-- `ready_test_ids`
+- `--url`
+- `--ready-test-ids`
 - optional `viewport`
-- optional `scroll_to_bottom`
-- optional `full_page`
+- optional `--scroll-bottom`
+- optional `--full-page`
+- optional `--base-url`
+- optional `--timeout-ms`
 
 Example:
+
+```bash
+autoscreen-cli --url /dashboard --ready-test-ids dashboard-ready,dashboard-empty --width 1440 --height 960 --scroll-bottom
+```
+
+Legacy positional args still work for compatibility:
 
 ```bash
 autoscreen-cli /dashboard dashboard-ready,dashboard-empty 1440 960 true

@@ -4,15 +4,106 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { captureScreenshot } from "./core/capture.js";
+import { closeSharedBrowser } from "./core/browser.js";
 import { ValidationError } from "./core/errors.js";
 import { validateScreenshotRequest } from "./validate/screenshot-request.js";
 
-export function parseCliArgs(argv: string[]): Record<string, unknown> {
+function splitReadyTestIds(value: string): string[] {
+  return value.split(",").map((entry) => entry.trim()).filter(Boolean);
+}
+
+function parseFlagBoolean(rawValue: string | undefined, flagName: string): boolean {
+  if (rawValue === undefined) {
+    return true;
+  }
+
+  if (rawValue === "true") {
+    return true;
+  }
+
+  if (rawValue === "false") {
+    return false;
+  }
+
+  throw new ValidationError(`${flagName} must be true or false when a value is provided`);
+}
+
+function parseNamedCliArgs(argv: string[]): Record<string, unknown> {
+  const parsed: Record<string, unknown> = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+
+    if (!argument.startsWith("--")) {
+      throw new ValidationError(`Unknown positional argument: ${argument}`);
+    }
+
+    const flagName = argument.slice(2);
+    const next = argv[index + 1];
+
+    switch (flagName) {
+      case "url":
+        parsed.url = next;
+        index += 1;
+        break;
+      case "ready-test-ids":
+        parsed.ready_test_ids = next ? splitReadyTestIds(next) : undefined;
+        index += 1;
+        break;
+      case "base-url":
+        parsed.base_url = next;
+        index += 1;
+        break;
+      case "width":
+        parsed.viewport = {
+          ...(parsed.viewport as Record<string, unknown> | undefined),
+          width: next === undefined ? undefined : Number(next)
+        };
+        index += 1;
+        break;
+      case "height":
+        parsed.viewport = {
+          ...(parsed.viewport as Record<string, unknown> | undefined),
+          height: next === undefined ? undefined : Number(next)
+        };
+        index += 1;
+        break;
+      case "scroll-bottom":
+        parsed.scroll_to_bottom = parseFlagBoolean(
+          next?.startsWith("--") ? undefined : next,
+          "--scroll-bottom"
+        );
+        if (!next?.startsWith("--") && next !== undefined) {
+          index += 1;
+        }
+        break;
+      case "full-page":
+        parsed.full_page = parseFlagBoolean(
+          next?.startsWith("--") ? undefined : next,
+          "--full-page"
+        );
+        if (!next?.startsWith("--") && next !== undefined) {
+          index += 1;
+        }
+        break;
+      case "timeout-ms":
+        parsed.timeout_ms = next === undefined ? undefined : Number(next);
+        index += 1;
+        break;
+      default:
+        throw new ValidationError(`Unknown CLI flag: --${flagName}`);
+    }
+  }
+
+  return parsed;
+}
+
+function parseLegacyCliArgs(argv: string[]): Record<string, unknown> {
   const [url, testIdsArg, widthArg, heightArg, scrollArg] = argv;
 
   if (!url || !testIdsArg) {
     throw new ValidationError(
-      "Usage: autoscreen-cli <url> <testid1,testid2> [width] [height] [scroll_bottom]"
+      "Usage: autoscreen-cli --url <url> --ready-test-ids <id1,id2> [--width <px>] [--height <px>] [--scroll-bottom] [--base-url <url>] [--timeout-ms <ms>] [--full-page <true|false>]"
     );
   }
 
@@ -26,31 +117,45 @@ export function parseCliArgs(argv: string[]): Record<string, unknown> {
 
   return {
     url,
-    ready_test_ids: testIdsArg.split(",").map((entry) => entry.trim()).filter(Boolean),
+    ready_test_ids: splitReadyTestIds(testIdsArg),
     viewport,
     scroll_to_bottom: scrollArg === "true"
   };
 }
 
-async function main(): Promise<void> {
-  const request = validateScreenshotRequest(parseCliArgs(process.argv.slice(2)));
-  const result = await captureScreenshot(request);
-  const outPath = join(tmpdir(), `autoscreen-${Date.now()}.png`);
-  writeFileSync(outPath, result.image);
+export function parseCliArgs(argv: string[]): Record<string, unknown> {
+  if (argv.length === 0) {
+    throw new ValidationError(
+      "Usage: autoscreen-cli --url <url> --ready-test-ids <id1,id2> [--width <px>] [--height <px>] [--scroll-bottom] [--base-url <url>] [--timeout-ms <ms>] [--full-page <true|false>]"
+    );
+  }
 
-  process.stdout.write(
-    JSON.stringify({
-      path: outPath,
-      url: result.finalUrl,
-      matchedTestId: result.matchedTestId,
-      durationMs: result.durationMs,
-      viewport: result.viewport,
-      failedRequests: result.failedRequests,
-      failedResponses: result.failedResponses,
-      droppedFailureEvents: result.droppedFailureEvents,
-      sizeBytes: result.image.byteLength
-    }) + "\n"
-  );
+  return argv[0].startsWith("--") ? parseNamedCliArgs(argv) : parseLegacyCliArgs(argv);
+}
+
+async function main(): Promise<void> {
+  try {
+    const request = validateScreenshotRequest(parseCliArgs(process.argv.slice(2)));
+    const result = await captureScreenshot(request);
+    const outPath = join(tmpdir(), `autoscreen-${Date.now()}.png`);
+    writeFileSync(outPath, result.image);
+
+    process.stdout.write(
+      JSON.stringify({
+        path: outPath,
+        url: result.finalUrl,
+        matchedTestId: result.matchedTestId,
+        durationMs: result.durationMs,
+        viewport: result.viewport,
+        failedRequests: result.failedRequests,
+        failedResponses: result.failedResponses,
+        droppedFailureEvents: result.droppedFailureEvents,
+        sizeBytes: result.image.byteLength
+      }) + "\n"
+    );
+  } finally {
+    await closeSharedBrowser();
+  }
 }
 
 const invokedPath = process.argv[1];
